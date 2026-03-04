@@ -314,6 +314,28 @@ input:focus {
   gap: 0.4rem;
 }
 
+.restriction-options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+}
+
+.restriction-option {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  border: 1px solid #d2d8e6;
+  border-radius: 999px;
+  padding: 0.3rem 0.55rem;
+  background: #fff;
+  font-size: 0.82rem;
+  color: #23314f;
+}
+
+.restriction-option input {
+  margin: 0;
+}
+
 .chip {
   border: 1px solid #d2d8e6;
   background: #f6f8fc;

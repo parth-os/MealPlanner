@@ -148,6 +148,59 @@ function parseBody(req) {
   return null;
 }
 
+function recipeIngredients(recipe) {
+  return [...recipe.required, ...recipe.optional].map(normalizeToken);
+}
+
+function recipeSupportsRestrictions(recipe, restrictions) {
+  if (!restrictions.length) {
+    return true;
+  }
+
+  const ingredients = recipeIngredients(recipe);
+  const tags = recipe.tags.map(normalizeToken);
+
+  for (const restriction of restrictions) {
+    if (restriction === "vegan") {
+      const hasAnimalItems = ingredients.some((item) =>
+        ["eggs", "yogurt", "ghee", "milk"].includes(item)
+      );
+      if (hasAnimalItems || !tags.includes("vegan")) {
+        return false;
+      }
+    }
+
+    if (restriction === "egg-free" && ingredients.includes("eggs")) {
+      return false;
+    }
+
+    if (
+      restriction === "dairy-free" &&
+      ingredients.some((item) => ["yogurt", "ghee", "milk"].includes(item))
+    ) {
+      return false;
+    }
+
+    if (
+      restriction === "gluten-free" &&
+      ingredients.some((item) => ["bread", "pasta", "suji"].includes(item))
+    ) {
+      return false;
+    }
+
+    if (restriction === "vegetarian") {
+      const hasNonVeg = ingredients.some((item) =>
+        ["chicken", "fish", "mutton", "beef", "prawn"].includes(item)
+      );
+      if (hasNonVeg) {
+        return false;
+      }
+    }
+  }
+
+  return true;
+}
+
 function scoreRecipe(recipe, available, prefs) {
   const missingRequired = recipe.required.filter((item) => !available.has(item));
   const matchedOptional = recipe.optional.filter((item) => available.has(item)).length;
@@ -184,9 +237,12 @@ export default async function handler(req, res) {
     const pantry = normalizeList(body.pantry);
     const vegetables = normalizeList(body.vegetables);
     const prefs = body.prefs && typeof body.prefs === "object" ? body.prefs : {};
+    const dietaryRestrictions = normalizeList(prefs.dietaryRestrictions, 12);
 
     const available = new Set([...pantry, ...vegetables]);
-    const ranked = RECIPES.map((recipe) => scoreRecipe(recipe, available, prefs));
+    const ranked = RECIPES.filter((recipe) =>
+      recipeSupportsRestrictions(recipe, dietaryRestrictions)
+    ).map((recipe) => scoreRecipe(recipe, available, prefs));
 
     const makeNow = ranked
       .filter((item) => item.missingRequired.length === 0)
@@ -204,7 +260,7 @@ export default async function handler(req, res) {
       )
       .slice(0, 5);
 
-    return json(res, 200, { makeNow, withFewMissing });
+    return json(res, 200, { makeNow, withFewMissing, appliedRestrictions: dietaryRestrictions });
   } catch (error) {
     return json(res, 500, { error: error?.message || "Failed to generate recommendations" });
   }

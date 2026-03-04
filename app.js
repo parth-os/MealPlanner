@@ -42,6 +42,14 @@ const VEGETABLE_SUGGESTIONS = [
   "sweet potato",
 ];
 
+const DIETARY_OPTIONS = [
+  { id: "vegetarian", label: "Vegetarian" },
+  { id: "vegan", label: "Vegan" },
+  { id: "egg-free", label: "Egg-free" },
+  { id: "dairy-free", label: "Dairy-free" },
+  { id: "gluten-free", label: "Gluten-free" },
+];
+
 const ingredientState = loadIngredients();
 
 const state = {
@@ -51,6 +59,7 @@ const state = {
   mealsByDate: loadMeals(),
   pantry: ingredientState.pantry,
   vegetables: ingredientState.vegetables,
+  dietaryRestrictions: ingredientState.dietaryRestrictions,
 };
 
 const monthViewBtn = document.getElementById("monthViewBtn");
@@ -72,6 +81,7 @@ const pantrySelected = document.getElementById("pantrySelected");
 const vegetablesSelected = document.getElementById("vegetablesSelected");
 const pantrySuggestions = document.getElementById("pantrySuggestions");
 const vegetablesSuggestions = document.getElementById("vegetablesSuggestions");
+const restrictionOptions = document.getElementById("restrictionOptions");
 const recommendBtn = document.getElementById("recommendBtn");
 const recommendResults = document.getElementById("recommendResults");
 
@@ -339,6 +349,38 @@ function renderIngredientSelectors() {
   renderSelectedChips("vegetables", vegetablesSelected);
   renderSuggestionChips("pantry", PANTRY_SUGGESTIONS, pantrySuggestions);
   renderSuggestionChips("vegetables", VEGETABLE_SUGGESTIONS, vegetablesSuggestions);
+  renderRestrictionOptions();
+}
+
+function renderRestrictionOptions() {
+  restrictionOptions.innerHTML = "";
+  DIETARY_OPTIONS.forEach((option) => {
+    const label = document.createElement("label");
+    label.className = "restriction-option";
+
+    const input = document.createElement("input");
+    input.type = "checkbox";
+    input.checked = state.dietaryRestrictions.includes(option.id);
+    input.addEventListener("change", () => {
+      toggleRestriction(option.id, input.checked);
+    });
+
+    const text = document.createElement("span");
+    text.textContent = option.label;
+    label.append(input, text);
+    restrictionOptions.appendChild(label);
+  });
+}
+
+function toggleRestriction(restriction, enabled) {
+  const next = new Set(state.dietaryRestrictions);
+  if (enabled) {
+    next.add(restriction);
+  } else {
+    next.delete(restriction);
+  }
+  state.dietaryRestrictions = [...next];
+  persistIngredients();
 }
 
 function renderSelectedChips(category, container) {
@@ -385,6 +427,7 @@ async function recommendMeals() {
         prefs: {
           view: state.view,
           selectedDate: dateKey(state.selectedDate),
+          dietaryRestrictions: state.dietaryRestrictions,
         },
       }),
     });
@@ -409,6 +452,13 @@ function renderRecommendations(data) {
   const withFewMissing = Array.isArray(data.withFewMissing) ? data.withFewMissing : [];
 
   recommendResults.innerHTML = "";
+  const applied = document.createElement("p");
+  applied.className = "helper";
+  applied.textContent = state.dietaryRestrictions.length
+    ? `Applied restrictions: ${state.dietaryRestrictions.join(", ")}`
+    : "Applied restrictions: none";
+  recommendResults.appendChild(applied);
+
   recommendResults.append(
     createResultGroup("Make now", makeNow, "You already have all required ingredients."),
     createResultGroup("With few missing", withFewMissing, "Up to 2 required ingredients missing.")
@@ -473,7 +523,7 @@ function loadIngredients() {
   try {
     const raw = localStorage.getItem(INGREDIENTS_KEY);
     if (!raw) {
-      return { pantry: [], vegetables: [] };
+      return { pantry: [], vegetables: [], dietaryRestrictions: [] };
     }
 
     const data = JSON.parse(raw);
@@ -482,9 +532,14 @@ function loadIngredients() {
       vegetables: Array.isArray(data.vegetables)
         ? data.vegetables.map(normalizeIngredient).filter(Boolean)
         : [],
+      dietaryRestrictions: Array.isArray(data.dietaryRestrictions)
+        ? data.dietaryRestrictions
+            .map((value) => String(value || "").trim().toLowerCase())
+            .filter((value) => DIETARY_OPTIONS.some((option) => option.id === value))
+        : [],
     };
   } catch {
-    return { pantry: [], vegetables: [] };
+    return { pantry: [], vegetables: [], dietaryRestrictions: [] };
   }
 }
 
@@ -494,6 +549,7 @@ function persistIngredients() {
     JSON.stringify({
       pantry: state.pantry,
       vegetables: state.vegetables,
+      dietaryRestrictions: state.dietaryRestrictions,
     })
   );
 }
