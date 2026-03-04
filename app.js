@@ -1,11 +1,11 @@
+const STORAGE_KEY = "mealPlannerDataV1";
 const DAY_NAMES = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
 const state = {
   view: "month",
   cursorDate: startOfDay(new Date()),
   selectedDate: startOfDay(new Date()),
-  mealsByDate: {},
-  loading: false,
+  mealsByDate: loadMeals(),
 };
 
 const monthViewBtn = document.getElementById("monthViewBtn");
@@ -21,7 +21,6 @@ const breakfastInput = document.getElementById("breakfastInput");
 const lunchInput = document.getElementById("lunchInput");
 const dinnerInput = document.getElementById("dinnerInput");
 const clearBtn = document.getElementById("clearBtn");
-const saveBtn = mealForm.querySelector('button[type="submit"]');
 
 monthViewBtn.addEventListener("click", () => setView("month"));
 weekViewBtn.addEventListener("click", () => setView("week"));
@@ -30,12 +29,7 @@ nextBtn.addEventListener("click", () => movePeriod(1));
 clearBtn.addEventListener("click", clearSelectedDay);
 mealForm.addEventListener("submit", saveSelectedDay);
 
-bootstrap();
-
-async function bootstrap() {
-  render();
-  await refreshVisibleRange();
-}
+render();
 
 function setView(nextView) {
   state.view = nextView;
@@ -46,7 +40,6 @@ function setView(nextView) {
   weekViewBtn.setAttribute("aria-selected", String(nextView === "week"));
 
   render();
-  refreshVisibleRange();
 }
 
 function movePeriod(direction) {
@@ -59,7 +52,6 @@ function movePeriod(direction) {
   }
   state.cursorDate = startOfDay(d);
   render();
-  refreshVisibleRange();
 }
 
 function render() {
@@ -199,85 +191,89 @@ async function saveSelectedDay(event) {
     dinner: dinnerInput.value.trim(),
   };
 
-  setSaving(true);
-  try {
-    const response = await fetch("/api/meals", {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload),
-    });
-
-    if (!response.ok) {
-      const data = await safeJson(response);
-      throw new Error(data?.error || `save failed (${response.status})`);
-    }
-
-    if (!payload.breakfast && !payload.lunch && !payload.dinner) {
-      delete state.mealsByDate[key];
-    } else {
-      state.mealsByDate[key] = {
-        breakfast: payload.breakfast,
-        lunch: payload.lunch,
-        dinner: payload.dinner,
-      };
-    }
-
-    render();
-  } catch (error) {
-    alert(error?.message || "Could not save meals right now.");
-  } finally {
-    setSaving(false);
+  if (!payload.breakfast && !payload.lunch && !payload.dinner) {
+    delete state.mealsByDate[key];
+  } else {
+    state.mealsByDate[key] = {
+      breakfast: payload.breakfast,
+      lunch: payload.lunch,
+      dinner: payload.dinner,
+    };
   }
+
+  persistMeals();
+
+  // Database integration (Edge Config) temporarily disabled.
+  // Uncomment to re-enable remote persistence.
+  // try {
+  //   await fetch("/api/meals", {
+  //     method: "PUT",
+  //     headers: { "Content-Type": "application/json" },
+  //     body: JSON.stringify(payload),
+  //   });
+  // } catch {
+  //   // Keep local save even if remote is unavailable.
+  // }
+
+  render();
 }
 
 async function clearSelectedDay() {
   const key = dateKey(state.selectedDate);
+  delete state.mealsByDate[key];
+  persistMeals();
 
-  setSaving(true);
+  // Database integration (Edge Config) temporarily disabled.
+  // Uncomment to re-enable remote delete.
+  // try {
+  //   await fetch("/api/meals", {
+  //     method: "DELETE",
+  //     headers: { "Content-Type": "application/json" },
+  //     body: JSON.stringify({ date: key }),
+  //   });
+  // } catch {
+  //   // Keep local delete even if remote is unavailable.
+  // }
+
+  render();
+}
+
+function loadMeals() {
   try {
-    const response = await fetch("/api/meals", {
-      method: "DELETE",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ date: key }),
-    });
-
-    if (!response.ok) {
-      const data = await safeJson(response);
-      throw new Error(data?.error || `delete failed (${response.status})`);
-    }
-
-    delete state.mealsByDate[key];
-    render();
-  } catch (error) {
-    alert(error?.message || "Could not clear meals right now.");
-  } finally {
-    setSaving(false);
+    const raw = localStorage.getItem(STORAGE_KEY);
+    return raw ? JSON.parse(raw) : {};
+  } catch {
+    return {};
   }
 }
 
-async function refreshVisibleRange() {
-  const { start, end } = getVisibleRange();
-  const startKey = dateKey(start);
-  const endKey = dateKey(end);
-
-  state.loading = true;
-
-  try {
-    const response = await fetch(`/api/meals?start=${encodeURIComponent(startKey)}&end=${encodeURIComponent(endKey)}`);
-    if (!response.ok) {
-      const data = await safeJson(response);
-      throw new Error(data?.error || `load failed (${response.status})`);
-    }
-
-    const data = await response.json();
-    state.mealsByDate = { ...state.mealsByDate, ...(data.meals || {}) };
-    render();
-  } catch (error) {
-    alert(error?.message || "Could not load meals from storage right now.");
-  } finally {
-    state.loading = false;
-  }
+function persistMeals() {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(state.mealsByDate));
 }
+
+// Database integration (Edge Config) temporarily disabled.
+// Uncomment to re-enable initial range hydration from /api/meals.
+// async function refreshVisibleRange() {
+//   const { start, end } = getVisibleRange();
+//   const startKey = dateKey(start);
+//   const endKey = dateKey(end);
+//
+//   try {
+//     const response = await fetch(
+//       `/api/meals?start=${encodeURIComponent(startKey)}&end=${encodeURIComponent(endKey)}`
+//     );
+//     if (!response.ok) {
+//       return;
+//     }
+//
+//     const data = await response.json();
+//     state.mealsByDate = { ...state.mealsByDate, ...(data.meals || {}) };
+//     persistMeals();
+//     render();
+//   } catch {
+//     // Keep local mode silent.
+//   }
+// }
 
 function getVisibleRange() {
   if (state.view === "month") {
@@ -294,14 +290,6 @@ function getVisibleRange() {
   const end = new Date(start);
   end.setDate(start.getDate() + 6);
   return { start, end };
-}
-
-function setSaving(isSaving) {
-  breakfastInput.disabled = isSaving;
-  lunchInput.disabled = isSaving;
-  dinnerInput.disabled = isSaving;
-  clearBtn.disabled = isSaving;
-  saveBtn.disabled = isSaving;
 }
 
 function dateKey(date) {
@@ -322,12 +310,4 @@ function formatMonthDay(date) {
     month: "short",
     day: "numeric",
   }).format(date);
-}
-
-async function safeJson(response) {
-  try {
-    return await response.json();
-  } catch {
-    return null;
-  }
 }
