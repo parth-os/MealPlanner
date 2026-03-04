@@ -54,11 +54,33 @@
             Dinner
             <input id="dinnerInput" type="text" placeholder="e.g., Stir fry" />
           </label>
+          <div class="chip-field">
+            <label for="pantryInput">Pantry staples</label>
+            <input
+              id="pantryInput"
+              type="text"
+              placeholder="Type items separated by commas, then press Enter"
+            />
+            <div id="pantrySelected" class="selected-chips"></div>
+            <div id="pantrySuggestions" class="suggestion-chips"></div>
+          </div>
+          <div class="chip-field">
+            <label for="vegetablesInput">Vegetables</label>
+            <input
+              id="vegetablesInput"
+              type="text"
+              placeholder="Type items separated by commas, then press Enter"
+            />
+            <div id="vegetablesSelected" class="selected-chips"></div>
+            <div id="vegetablesSuggestions" class="suggestion-chips"></div>
+          </div>
           <div class="editor-actions">
             <button type="submit" class="save-btn">Save Meals</button>
             <button type="button" id="clearBtn" class="clear-btn">Clear Day</button>
           </div>
+          <button type="button" id="recommendBtn" class="recommend-btn">Recommend meals</button>
         </form>
+        <section id="recommendResults" class="recommend-results"></section>
         <p class="helper">Tip: Click any date (including past dates) to add or update meals.</p>
       </section>
     </main>

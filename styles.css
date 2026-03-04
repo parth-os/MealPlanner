@@ -279,6 +279,88 @@ input:focus {
   color: var(--warn);
 }
 
+.recommend-btn {
+  border-radius: 12px;
+  padding: 0.62rem 0.7rem;
+  font-weight: 700;
+  background: #2f3f60;
+  color: #fff;
+}
+
+.chip-field {
+  display: grid;
+  gap: 0.35rem;
+}
+
+.selected-chips,
+.suggestion-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+
+.chip {
+  border: 1px solid #d2d8e6;
+  background: #f6f8fc;
+  color: #23314f;
+  border-radius: 999px;
+  padding: 0.25rem 0.55rem;
+  font-size: 0.8rem;
+  line-height: 1.2;
+}
+
+.chip.selected {
+  background: #e8f6f4;
+  border-color: #b8dfd8;
+  color: #195f57;
+}
+
+button.chip {
+  cursor: pointer;
+}
+
+.chip .remove {
+  margin-left: 0.35rem;
+  font-weight: 700;
+}
+
+.recommend-results {
+  margin-top: 0.9rem;
+  display: grid;
+  gap: 0.8rem;
+}
+
+.result-group {
+  border: 1px solid var(--outline);
+  border-radius: 12px;
+  padding: 0.7rem;
+  background: #fff;
+}
+
+.result-group h4 {
+  margin: 0 0 0.5rem 0;
+  font-size: 0.95rem;
+}
+
+.result-item {
+  padding: 0.4rem 0;
+  border-top: 1px dashed #e6e1d9;
+}
+
+.result-item:first-of-type {
+  border-top: 0;
+  padding-top: 0;
+}
+
+.result-name {
+  font-weight: 700;
+}
+
+.missing {
+  color: #7b4a1b;
+  font-size: 0.82rem;
+}
+
 .helper {
   margin-top: 0.7rem;
   color: var(--muted);
