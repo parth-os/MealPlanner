@@ -28,71 +28,76 @@
         </div>
       </header>
 
-      <section class="calendar-shell">
+      <section class="recommend-primary panel-card">
+        <h3>Meal Recommendations</h3>
+        <div class="recommend-grid">
+          <div class="recommend-inputs">
+            <div class="chip-field">
+              <label for="pantryInput">Pantry staples</label>
+              <input
+                id="pantryInput"
+                type="text"
+                placeholder="Type items separated by commas, then press Enter"
+              />
+              <div id="pantrySelected" class="selected-chips"></div>
+              <div id="pantrySuggestions" class="suggestion-chips"></div>
+            </div>
+            <div class="chip-field">
+              <label for="vegetablesInput">Vegetables</label>
+              <input
+                id="vegetablesInput"
+                type="text"
+                placeholder="Type items separated by commas, then press Enter"
+              />
+              <div id="vegetablesSelected" class="selected-chips"></div>
+              <div id="vegetablesSuggestions" class="suggestion-chips"></div>
+            </div>
+            <div class="chip-field">
+              <label>Dietary restrictions</label>
+              <div id="restrictionOptions" class="restriction-options"></div>
+            </div>
+            <button type="button" id="recommendBtn" class="recommend-btn">Recommend meals</button>
+          </div>
+          <div class="recommend-output">
+            <section id="recommendResults" class="recommend-results">
+              <p class="helper">Select ingredients and click "Recommend meals".</p>
+            </section>
+          </div>
+        </div>
+      </section>
+
+      <section class="editor-shell panel-card" aria-live="polite">
+        <h3 id="editorDate">Select a day</h3>
+        <form id="mealForm">
+          <label>
+            Breakfast
+            <input id="breakfastInput" type="text" placeholder="e.g., Oatmeal and fruit" />
+          </label>
+          <label>
+            Lunch
+            <input id="lunchInput" type="text" placeholder="e.g., Chickpea salad" />
+          </label>
+          <label>
+            Dinner
+            <input id="dinnerInput" type="text" placeholder="e.g., Stir fry" />
+          </label>
+          <div class="editor-actions">
+            <button type="submit" class="save-btn">Save Meals</button>
+            <button type="button" id="clearBtn" class="clear-btn">Clear Day</button>
+          </div>
+        </form>
+        <p class="helper">Tip: Click a calendar date to update this form.</p>
+      </section>
+
+      <section class="calendar-shell panel-card ultra-compact">
         <div class="calendar-toolbar">
           <button id="prevBtn" class="nav-btn" aria-label="Previous period">&#8592;</button>
           <h2 id="periodLabel"></h2>
           <button id="nextBtn" class="nav-btn" aria-label="Next period">&#8594;</button>
         </div>
-
         <div id="weekdayHeader" class="weekday-header"></div>
         <div id="calendarGrid" class="calendar-grid"></div>
       </section>
-
-      <aside class="right-panel">
-        <section class="editor-shell panel-card" aria-live="polite">
-          <h3 id="editorDate">Select a day</h3>
-          <form id="mealForm">
-            <label>
-              Breakfast
-              <input id="breakfastInput" type="text" placeholder="e.g., Oatmeal and fruit" />
-            </label>
-            <label>
-              Lunch
-              <input id="lunchInput" type="text" placeholder="e.g., Chickpea salad" />
-            </label>
-            <label>
-              Dinner
-              <input id="dinnerInput" type="text" placeholder="e.g., Stir fry" />
-            </label>
-            <div class="editor-actions">
-              <button type="submit" class="save-btn">Save Meals</button>
-              <button type="button" id="clearBtn" class="clear-btn">Clear Day</button>
-            </div>
-          </form>
-          <p class="helper">Tip: Click any date (including past dates) to add or update meals.</p>
-        </section>
-
-        <section class="recommend-shell panel-card">
-          <h3>Meal Recommendations</h3>
-          <div class="chip-field">
-            <label for="pantryInput">Pantry staples</label>
-            <input
-              id="pantryInput"
-              type="text"
-              placeholder="Type items separated by commas, then press Enter"
-            />
-            <div id="pantrySelected" class="selected-chips"></div>
-            <div id="pantrySuggestions" class="suggestion-chips"></div>
-          </div>
-          <div class="chip-field">
-            <label for="vegetablesInput">Vegetables</label>
-            <input
-              id="vegetablesInput"
-              type="text"
-              placeholder="Type items separated by commas, then press Enter"
-            />
-            <div id="vegetablesSelected" class="selected-chips"></div>
-            <div id="vegetablesSuggestions" class="suggestion-chips"></div>
-          </div>
-          <div class="chip-field">
-            <label>Dietary restrictions</label>
-            <div id="restrictionOptions" class="restriction-options"></div>
-          </div>
-          <button type="button" id="recommendBtn" class="recommend-btn">Recommend meals</button>
-          <section id="recommendResults" class="recommend-results"></section>
-        </section>
-      </aside>
     </main>
 
     <script src="app.js"></script>

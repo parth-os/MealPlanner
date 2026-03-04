@@ -50,6 +50,24 @@ const DIETARY_OPTIONS = [
   { id: "gluten-free", label: "Gluten-free" },
 ];
 
+const LOCAL_RECIPES = [
+  { name: "Veggie Omelette", required: ["eggs", "onion"], optional: ["tomato", "spinach", "mushroom"], tags: ["breakfast", "high-protein"], timeMins: 15 },
+  { name: "Chickpea Spinach Curry", required: ["chickpeas", "onion", "garlic"], optional: ["spinach", "tomato", "rice"], tags: ["vegan", "one-pot"], timeMins: 30 },
+  { name: "Pasta Primavera", required: ["pasta", "olive oil", "garlic"], optional: ["broccoli", "bell pepper", "zucchini"], tags: ["vegetarian", "quick"], timeMins: 25 },
+  { name: "Lentil Soup", required: ["lentils", "onion", "carrot"], optional: ["garlic", "tomato", "cabbage"], tags: ["vegan", "soup"], timeMins: 35 },
+  { name: "Rice and Beans Bowl", required: ["rice", "beans"], optional: ["tomato", "onion", "bell pepper"], tags: ["vegan", "meal-prep"], timeMins: 20 },
+  { name: "Vegetable Fried Rice", required: ["rice", "eggs", "onion"], optional: ["peas", "carrot", "green beans"], tags: ["quick", "one-pan"], timeMins: 20 },
+  { name: "Tomato Basil Pasta", required: ["pasta", "tomato", "olive oil"], optional: ["garlic", "onion", "spinach"], tags: ["vegetarian", "quick"], timeMins: 18 },
+  { name: "Aloo Matar", required: ["potato", "peas", "onion"], optional: ["tomato", "garlic", "rice"], tags: ["vegan", "indian"], timeMins: 30 },
+  { name: "Moong Dal Khichdi (Baby)", required: ["rice", "moong dal"], optional: ["carrot", "bottle gourd", "ghee"], tags: ["indian", "baby-friendly", "toddler-friendly", "one-pot"], timeMins: 25 },
+  { name: "Vegetable Suji Upma (Toddler)", required: ["suji", "onion"], optional: ["carrot", "peas", "ghee"], tags: ["indian", "toddler-friendly", "quick"], timeMins: 18 },
+  { name: "Ragi Porridge", required: ["ragi flour"], optional: ["ghee", "milk", "banana"], tags: ["indian", "baby-friendly", "breakfast"], timeMins: 12 },
+  { name: "Poha with Veg (Toddler)", required: ["poha", "onion"], optional: ["peas", "carrot", "potato"], tags: ["indian", "toddler-friendly", "quick"], timeMins: 15 },
+  { name: "Dal Rice Mash", required: ["rice", "lentils"], optional: ["ghee", "pumpkin", "carrot"], tags: ["indian", "baby-friendly", "comfort"], timeMins: 25 },
+  { name: "Pumpkin Dal Soup (Baby)", required: ["pumpkin", "moong dal"], optional: ["ghee", "garlic", "carrot"], tags: ["indian", "baby-friendly", "soup"], timeMins: 22 },
+  { name: "Besan Chilla (Soft)", required: ["besan", "onion"], optional: ["tomato", "spinach", "ghee"], tags: ["indian", "toddler-friendly", "breakfast"], timeMins: 15 },
+];
+
 const ingredientState = loadIngredients();
 
 const state = {
@@ -84,6 +102,7 @@ const vegetablesSuggestions = document.getElementById("vegetablesSuggestions");
 const restrictionOptions = document.getElementById("restrictionOptions");
 const recommendBtn = document.getElementById("recommendBtn");
 const recommendResults = document.getElementById("recommendResults");
+const calendarTooltip = createCalendarTooltip();
 
 monthViewBtn.addEventListener("click", () => setView("month"));
 weekViewBtn.addEventListener("click", () => setView("week"));
@@ -234,6 +253,31 @@ function buildDayCell(day, isMuted) {
   appendMealLine(preview, "B", meals.breakfast);
   appendMealLine(preview, "L", meals.lunch);
   appendMealLine(preview, "D", meals.dinner);
+
+  const hoverLines = [];
+  if (meals.breakfast && meals.breakfast.trim()) {
+    hoverLines.push(`Breakfast: ${meals.breakfast}`);
+  }
+  if (meals.lunch && meals.lunch.trim()) {
+    hoverLines.push(`Lunch: ${meals.lunch}`);
+  }
+  if (meals.dinner && meals.dinner.trim()) {
+    hoverLines.push(`Dinner: ${meals.dinner}`);
+  }
+  const hoverText = hoverLines.length ? hoverLines.join("\n") : "No meals logged";
+  button.removeAttribute("title");
+  button.addEventListener("mouseenter", (event) => {
+    showCalendarTooltip(hoverText, event.clientX, event.clientY);
+  });
+  button.addEventListener("mousemove", (event) => {
+    moveCalendarTooltip(event.clientX, event.clientY);
+  });
+  button.addEventListener("mouseleave", hideCalendarTooltip);
+  button.addEventListener("focus", () => {
+    const rect = button.getBoundingClientRect();
+    showCalendarTooltip(hoverText, rect.left + rect.width / 2, rect.top);
+  });
+  button.addEventListener("blur", hideCalendarTooltip);
 
   button.append(dayNumber, preview);
   button.addEventListener("click", () => {
@@ -439,9 +483,12 @@ async function recommendMeals() {
 
     renderRecommendations(data);
   } catch (error) {
-    recommendResults.innerHTML = `<p class="helper">${escapeHtml(
-      error?.message || "Could not generate recommendations."
-    )}</p>`;
+    const fallback = recommendMealsLocally();
+    renderRecommendations(fallback);
+    const note = document.createElement("p");
+    note.className = "helper";
+    note.textContent = `Using offline recommendations (${error?.message || "network unavailable"}).`;
+    recommendResults.prepend(note);
   } finally {
     recommendBtn.disabled = false;
   }
@@ -506,6 +553,85 @@ function createResultGroup(title, items, emptyText) {
   return group;
 }
 
+function recommendMealsLocally() {
+  const available = new Set([...state.pantry, ...state.vegetables].map(normalizeIngredient));
+  const restrictions = state.dietaryRestrictions.map(normalizeIngredient);
+
+  const ranked = LOCAL_RECIPES.filter((recipe) => recipeMatchesRestrictions(recipe, restrictions)).map((recipe) => {
+    const required = recipe.required.map(normalizeIngredient);
+    const optional = recipe.optional.map(normalizeIngredient);
+    const missingRequired = required.filter((item) => !available.has(item));
+    const optionalHits = optional.filter((item) => available.has(item)).length;
+    const score = (required.length - missingRequired.length) * 4 + optionalHits * 2 - recipe.timeMins / 20;
+
+    return {
+      name: recipe.name,
+      tags: recipe.tags,
+      timeMins: recipe.timeMins,
+      missingRequired,
+      score,
+    };
+  });
+
+  const makeNow = ranked
+    .filter((item) => item.missingRequired.length === 0)
+    .sort((a, b) => b.score - a.score || a.timeMins - b.timeMins || a.name.localeCompare(b.name))
+    .slice(0, 5);
+
+  const withFewMissing = ranked
+    .filter((item) => item.missingRequired.length > 0 && item.missingRequired.length <= 2)
+    .sort(
+      (a, b) =>
+        a.missingRequired.length - b.missingRequired.length ||
+        b.score - a.score ||
+        a.timeMins - b.timeMins ||
+        a.name.localeCompare(b.name)
+    )
+    .slice(0, 5);
+
+  return { makeNow, withFewMissing };
+}
+
+function recipeMatchesRestrictions(recipe, restrictions) {
+  if (!restrictions.length) {
+    return true;
+  }
+
+  const ingredients = [...recipe.required, ...recipe.optional].map(normalizeIngredient);
+  const tags = recipe.tags.map(normalizeIngredient);
+
+  for (const restriction of restrictions) {
+    if (restriction === "vegan") {
+      if (
+        !tags.includes("vegan") ||
+        ingredients.some((item) => ["eggs", "yogurt", "ghee", "milk"].includes(item))
+      ) {
+        return false;
+      }
+    }
+
+    if (restriction === "egg-free" && ingredients.includes("eggs")) {
+      return false;
+    }
+
+    if (
+      restriction === "dairy-free" &&
+      ingredients.some((item) => ["yogurt", "ghee", "milk"].includes(item))
+    ) {
+      return false;
+    }
+
+    if (
+      restriction === "gluten-free" &&
+      ingredients.some((item) => ["bread", "pasta", "suji"].includes(item))
+    ) {
+      return false;
+    }
+  }
+
+  return true;
+}
+
 function loadMeals() {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
@@ -561,6 +687,7 @@ function normalizeIngredient(value) {
     .trim();
 }
 
+
 function escapeHtml(value) {
   return String(value)
     .replaceAll("&", "&amp;")
@@ -568,6 +695,29 @@ function escapeHtml(value) {
     .replaceAll(">", "&gt;")
     .replaceAll('"', "&quot;")
     .replaceAll("'", "&#039;");
+}
+
+function createCalendarTooltip() {
+  const tooltip = document.createElement("div");
+  tooltip.className = "calendar-tooltip hidden";
+  document.body.appendChild(tooltip);
+  return tooltip;
+}
+
+function showCalendarTooltip(text, x, y) {
+  calendarTooltip.textContent = text;
+  calendarTooltip.classList.remove("hidden");
+  moveCalendarTooltip(x, y);
+}
+
+function moveCalendarTooltip(x, y) {
+  const offset = 12;
+  calendarTooltip.style.left = `${x + offset}px`;
+  calendarTooltip.style.top = `${y + offset}px`;
+}
+
+function hideCalendarTooltip() {
+  calendarTooltip.classList.add("hidden");
 }
 
 async function safeJson(response) {

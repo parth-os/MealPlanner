@@ -52,14 +52,14 @@ body {
   width: min(1100px, 94vw);
   margin: 2rem auto 3rem;
   display: grid;
-  grid-template-columns: 1.7fr 1fr;
+  grid-template-columns: 1fr 1fr;
   gap: 1.25rem;
 }
 
 .topbar,
 .calendar-shell,
 .editor-shell,
-.recommend-shell {
+.recommend-primary {
   background: var(--card);
   border: 1px solid var(--outline);
   border-radius: 22px;
@@ -125,13 +125,12 @@ h1 {
 }
 
 .calendar-shell {
-  padding: 1rem;
+  padding: 0.8rem;
+  align-self: start;
 }
 
-.right-panel {
-  display: grid;
-  gap: 1rem;
-  align-self: start;
+.calendar-shell.ultra-compact {
+  padding: 0.65rem;
 }
 
 .calendar-toolbar {
@@ -161,7 +160,7 @@ h1 {
 .calendar-grid {
   display: grid;
   grid-template-columns: repeat(7, minmax(0, 1fr));
-  gap: 0.45rem;
+  gap: 0.35rem;
 }
 
 .weekday-header {
@@ -176,14 +175,26 @@ h1 {
   color: var(--muted);
 }
 
+.calendar-shell.ultra-compact .weekday-header span {
+  font-size: 0.68rem;
+}
+
 .day-cell {
-  min-height: 124px;
+  min-height: 82px;
   background: #fff;
   border: 1px solid var(--outline);
   border-radius: 14px;
-  padding: 0.45rem;
+  padding: 0.35rem;
   text-align: left;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
   transition: transform 140ms ease, border-color 140ms ease;
+}
+
+.calendar-shell.ultra-compact .day-cell {
+  min-height: 64px;
+  padding: 0.28rem;
 }
 
 .day-cell:hover {
@@ -201,16 +212,34 @@ h1 {
 }
 
 .date-number {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
   font-weight: 700;
-  font-size: 0.95rem;
-  margin-bottom: 0.3rem;
+  font-size: 0.88rem;
+  line-height: 1;
+  margin-bottom: 0.22rem;
+}
+
+.calendar-shell.ultra-compact .date-number {
+  font-size: 0.78rem;
+  margin-bottom: 0.14rem;
 }
 
 .meal-preview {
   display: grid;
-  gap: 0.2rem;
-  font-size: 0.73rem;
+  gap: 0.14rem;
+  font-size: 0.67rem;
   color: #3d3833;
+}
+
+.calendar-shell.ultra-compact .meal-preview {
+  font-size: 0.6rem;
+  gap: 0.08rem;
+}
+
+.calendar-shell.ultra-compact .meal-preview div:nth-child(n + 2) {
+  display: none;
 }
 
 .meal-preview div {
@@ -221,24 +250,51 @@ h1 {
 
 .today-pill {
   display: inline-block;
-  margin-left: 0.35rem;
+  margin-left: 0;
   padding: 0.1rem 0.35rem;
   border-radius: 999px;
   font-size: 0.62rem;
   background: #fff1c7;
 }
 
+.calendar-shell.ultra-compact .today-pill {
+  font-size: 0.56rem;
+  padding: 0.06rem 0.28rem;
+}
+
 .editor-shell {
   padding: 1rem;
+  align-self: start;
 }
 
-.recommend-shell {
-  padding: 1rem;
+.recommend-primary {
+  grid-column: 1 / -1;
+  padding: 1.05rem;
+  border-color: #d5deeb;
+  box-shadow: 0 10px 26px rgba(35, 49, 79, 0.08);
 }
 
-.recommend-shell h3 {
+.recommend-primary h3 {
   margin-bottom: 0.9rem;
   font-family: "Fraunces", serif;
+}
+
+.recommend-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+
+.recommend-inputs {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.recommend-output {
+  border: 1px solid #dde4f0;
+  border-radius: 12px;
+  background: #fbfcff;
+  padding: 0.75rem;
 }
 
 #editorDate {
@@ -296,10 +352,13 @@ input:focus {
 
 .recommend-btn {
   border-radius: 12px;
-  padding: 0.62rem 0.7rem;
-  font-weight: 700;
+  padding: 0.4rem 0.58rem;
+  font-weight: 600;
+  font-size: 0.82rem;
   background: #2f3f60;
   color: #fff;
+  width: fit-content;
+  justify-self: start;
 }
 
 .chip-field {
@@ -404,17 +463,36 @@ button.chip {
   font-size: 0.84rem;
 }
 
+.calendar-tooltip {
+  position: fixed;
+  z-index: 9999;
+  max-width: 260px;
+  padding: 0.45rem 0.55rem;
+  border-radius: 8px;
+  background: #1f2937;
+  color: #fff;
+  font-size: 0.75rem;
+  line-height: 1.35;
+  white-space: pre-line;
+  pointer-events: none;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.2);
+}
+
+.calendar-tooltip.hidden {
+  display: none;
+}
+
 @media (max-width: 920px) {
   .app {
     grid-template-columns: 1fr;
   }
 
-  .right-panel {
-    gap: 1.25rem;
+  .recommend-grid {
+    grid-template-columns: 1fr;
   }
 
   .day-cell {
-    min-height: 102px;
+    min-height: 74px;
   }
 }
 
