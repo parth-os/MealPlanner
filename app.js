@@ -1,11 +1,11 @@
-const STORAGE_KEY = "mealPlannerDataV1";
 const DAY_NAMES = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
 const state = {
   view: "month",
   cursorDate: startOfDay(new Date()),
   selectedDate: startOfDay(new Date()),
-  mealsByDate: loadMeals(),
+  mealsByDate: {},
+  loading: false,
 };
 
 const monthViewBtn = document.getElementById("monthViewBtn");
@@ -21,6 +21,7 @@ const breakfastInput = document.getElementById("breakfastInput");
 const lunchInput = document.getElementById("lunchInput");
 const dinnerInput = document.getElementById("dinnerInput");
 const clearBtn = document.getElementById("clearBtn");
+const saveBtn = mealForm.querySelector('button[type="submit"]');
 
 monthViewBtn.addEventListener("click", () => setView("month"));
 weekViewBtn.addEventListener("click", () => setView("week"));
@@ -29,7 +30,12 @@ nextBtn.addEventListener("click", () => movePeriod(1));
 clearBtn.addEventListener("click", clearSelectedDay);
 mealForm.addEventListener("submit", saveSelectedDay);
 
-render();
+bootstrap();
+
+async function bootstrap() {
+  render();
+  await refreshVisibleRange();
+}
 
 function setView(nextView) {
   state.view = nextView;
@@ -40,6 +46,7 @@ function setView(nextView) {
   weekViewBtn.setAttribute("aria-selected", String(nextView === "week"));
 
   render();
+  refreshVisibleRange();
 }
 
 function movePeriod(direction) {
@@ -52,6 +59,7 @@ function movePeriod(direction) {
   }
   state.cursorDate = startOfDay(d);
   render();
+  refreshVisibleRange();
 }
 
 function render() {
@@ -181,43 +189,116 @@ function renderEditor() {
   dinnerInput.value = meals.dinner || "";
 }
 
-function saveSelectedDay(event) {
+async function saveSelectedDay(event) {
   event.preventDefault();
   const key = dateKey(state.selectedDate);
   const payload = {
+    date: key,
     breakfast: breakfastInput.value.trim(),
     lunch: lunchInput.value.trim(),
     dinner: dinnerInput.value.trim(),
   };
 
-  if (!payload.breakfast && !payload.lunch && !payload.dinner) {
-    delete state.mealsByDate[key];
-  } else {
-    state.mealsByDate[key] = payload;
-  }
-
-  persistMeals();
-  render();
-}
-
-function clearSelectedDay() {
-  const key = dateKey(state.selectedDate);
-  delete state.mealsByDate[key];
-  persistMeals();
-  render();
-}
-
-function loadMeals() {
+  setSaving(true);
   try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    return raw ? JSON.parse(raw) : {};
+    const response = await fetch("/api/meals", {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+
+    if (!response.ok) {
+      throw new Error("save failed");
+    }
+
+    if (!payload.breakfast && !payload.lunch && !payload.dinner) {
+      delete state.mealsByDate[key];
+    } else {
+      state.mealsByDate[key] = {
+        breakfast: payload.breakfast,
+        lunch: payload.lunch,
+        dinner: payload.dinner,
+      };
+    }
+
+    render();
   } catch {
-    return {};
+    alert("Could not save meals right now.");
+  } finally {
+    setSaving(false);
   }
 }
 
-function persistMeals() {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(state.mealsByDate));
+async function clearSelectedDay() {
+  const key = dateKey(state.selectedDate);
+
+  setSaving(true);
+  try {
+    const response = await fetch("/api/meals", {
+      method: "DELETE",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ date: key }),
+    });
+
+    if (!response.ok) {
+      throw new Error("delete failed");
+    }
+
+    delete state.mealsByDate[key];
+    render();
+  } catch {
+    alert("Could not clear meals right now.");
+  } finally {
+    setSaving(false);
+  }
+}
+
+async function refreshVisibleRange() {
+  const { start, end } = getVisibleRange();
+  const startKey = dateKey(start);
+  const endKey = dateKey(end);
+
+  state.loading = true;
+
+  try {
+    const response = await fetch(`/api/meals?start=${encodeURIComponent(startKey)}&end=${encodeURIComponent(endKey)}`);
+    if (!response.ok) {
+      throw new Error("load failed");
+    }
+
+    const data = await response.json();
+    state.mealsByDate = { ...state.mealsByDate, ...(data.meals || {}) };
+    render();
+  } catch {
+    alert("Could not load meals from storage right now.");
+  } finally {
+    state.loading = false;
+  }
+}
+
+function getVisibleRange() {
+  if (state.view === "month") {
+    const firstOfMonth = new Date(state.cursorDate.getFullYear(), state.cursorDate.getMonth(), 1);
+    const start = new Date(firstOfMonth);
+    start.setDate(firstOfMonth.getDate() - firstOfMonth.getDay());
+    const end = new Date(start);
+    end.setDate(start.getDate() + 41);
+    return { start, end };
+  }
+
+  const start = new Date(state.cursorDate);
+  start.setDate(start.getDate() - start.getDay());
+  const end = new Date(start);
+  end.setDate(start.getDate() + 6);
+  return { start, end };
+}
+
+function setSaving(isSaving) {
+  breakfastInput.disabled = isSaving;
+  lunchInput.disabled = isSaving;
+  dinnerInput.disabled = isSaving;
+  clearBtn.disabled = isSaving;
+  saveBtn.disabled = isSaving;
 }
 
 function dateKey(date) {
