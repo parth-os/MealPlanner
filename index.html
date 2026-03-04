@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Meal Planner</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=Fraunces:opsz,wght@9..144,600&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div class="background-shape shape-a"></div>
+    <div class="background-shape shape-b"></div>
+
+    <main class="app">
+      <header class="topbar">
+        <div>
+          <p class="eyebrow">Meal Planner</p>
+          <h1>Plan and backfill your meals</h1>
+        </div>
+        <div class="view-toggle" role="tablist" aria-label="Calendar view">
+          <button id="monthViewBtn" class="toggle-btn active" role="tab" aria-selected="true">Month</button>
+          <button id="weekViewBtn" class="toggle-btn" role="tab" aria-selected="false">Week</button>
+        </div>
+      </header>
+
+      <section class="calendar-shell">
+        <div class="calendar-toolbar">
+          <button id="prevBtn" class="nav-btn" aria-label="Previous period">&#8592;</button>
+          <h2 id="periodLabel"></h2>
+          <button id="nextBtn" class="nav-btn" aria-label="Next period">&#8594;</button>
+        </div>
+
+        <div id="weekdayHeader" class="weekday-header"></div>
+        <div id="calendarGrid" class="calendar-grid"></div>
+      </section>
+
+      <section class="editor-shell" aria-live="polite">
+        <h3 id="editorDate">Select a day</h3>
+        <form id="mealForm">
+          <label>
+            Breakfast
+            <input id="breakfastInput" type="text" placeholder="e.g., Oatmeal and fruit" />
+          </label>
+          <label>
+            Lunch
+            <input id="lunchInput" type="text" placeholder="e.g., Chickpea salad" />
+          </label>
+          <label>
+            Dinner
+            <input id="dinnerInput" type="text" placeholder="e.g., Stir fry" />
+          </label>
+          <div class="editor-actions">
+            <button type="submit" class="save-btn">Save Meals</button>
+            <button type="button" id="clearBtn" class="clear-btn">Clear Day</button>
+          </div>
+        </form>
+        <p class="helper">Tip: Click any date (including past dates) to add or update meals.</p>
+      </section>
+    </main>
+
+    <script src="app.js"></script>
+  </body>
+</html>
