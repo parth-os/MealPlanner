@@ -89,11 +89,30 @@ async function patchEdgeConfigItem(item) {
   }
 }
 
+function parseRequestBody(req) {
+  if (!req.body) {
+    return {};
+  }
+  if (typeof req.body === "string") {
+    try {
+      return JSON.parse(req.body);
+    } catch {
+      return null;
+    }
+  }
+  if (typeof req.body === "object") {
+    return req.body;
+  }
+  return null;
+}
+
 export default async function handler(req, res) {
   if (req.method === "GET") {
     try {
-      const start = normalizeText(req.query.start, 10);
-      const end = normalizeText(req.query.end, 10);
+      const base = `https://${req.headers.host || "localhost"}`;
+      const requestUrl = new URL(req.url || "/", base);
+      const start = normalizeText(requestUrl.searchParams.get("start"), 10);
+      const end = normalizeText(requestUrl.searchParams.get("end"), 10);
 
       if (!isIsoDate(start) || !isIsoDate(end)) {
         return json(res, 400, { error: "start and end must use YYYY-MM-DD" });
@@ -126,13 +145,20 @@ export default async function handler(req, res) {
 
       return json(res, 200, { ok: true, meals });
     } catch (error) {
+      console.error("GET /api/meals failed", {
+        message: error?.message,
+        stack: error?.stack,
+      });
       return json(res, 500, { error: error.message || "Failed to load meals" });
     }
   }
 
   if (req.method === "PUT") {
     try {
-      const body = req.body && typeof req.body === "object" ? req.body : {};
+      const body = parseRequestBody(req);
+      if (!body || typeof body !== "object") {
+        return json(res, 400, { error: "Invalid JSON payload" });
+      }
       const date = normalizeText(body.date, 10);
 
       if (!isIsoDate(date)) {
@@ -162,13 +188,20 @@ export default async function handler(req, res) {
 
       return json(res, 200, { ok: true });
     } catch (error) {
+      console.error("PUT /api/meals failed", {
+        message: error?.message,
+        stack: error?.stack,
+      });
       return json(res, 500, { error: error.message || "Failed to save meal" });
     }
   }
 
   if (req.method === "DELETE") {
     try {
-      const body = req.body && typeof req.body === "object" ? req.body : {};
+      const body = parseRequestBody(req);
+      if (!body || typeof body !== "object") {
+        return json(res, 400, { error: "Invalid JSON payload" });
+      }
       const date = normalizeText(body.date, 10);
       if (!isIsoDate(date)) {
         return json(res, 400, { error: "date must use YYYY-MM-DD" });
@@ -177,6 +210,10 @@ export default async function handler(req, res) {
       await patchEdgeConfigItem({ operation: "delete", key: dateToKey(date) });
       return json(res, 200, { ok: true });
     } catch (error) {
+      console.error("DELETE /api/meals failed", {
+        message: error?.message,
+        stack: error?.stack,
+      });
       return json(res, 500, { error: error.message || "Failed to delete meal" });
     }
   }

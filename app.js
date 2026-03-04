@@ -208,7 +208,8 @@ async function saveSelectedDay(event) {
     });
 
     if (!response.ok) {
-      throw new Error("save failed");
+      const data = await safeJson(response);
+      throw new Error(data?.error || `save failed (${response.status})`);
     }
 
     if (!payload.breakfast && !payload.lunch && !payload.dinner) {
@@ -222,8 +223,8 @@ async function saveSelectedDay(event) {
     }
 
     render();
-  } catch {
-    alert("Could not save meals right now.");
+  } catch (error) {
+    alert(error?.message || "Could not save meals right now.");
   } finally {
     setSaving(false);
   }
@@ -241,13 +242,14 @@ async function clearSelectedDay() {
     });
 
     if (!response.ok) {
-      throw new Error("delete failed");
+      const data = await safeJson(response);
+      throw new Error(data?.error || `delete failed (${response.status})`);
     }
 
     delete state.mealsByDate[key];
     render();
-  } catch {
-    alert("Could not clear meals right now.");
+  } catch (error) {
+    alert(error?.message || "Could not clear meals right now.");
   } finally {
     setSaving(false);
   }
@@ -263,14 +265,15 @@ async function refreshVisibleRange() {
   try {
     const response = await fetch(`/api/meals?start=${encodeURIComponent(startKey)}&end=${encodeURIComponent(endKey)}`);
     if (!response.ok) {
-      throw new Error("load failed");
+      const data = await safeJson(response);
+      throw new Error(data?.error || `load failed (${response.status})`);
     }
 
     const data = await response.json();
     state.mealsByDate = { ...state.mealsByDate, ...(data.meals || {}) };
     render();
-  } catch {
-    alert("Could not load meals from storage right now.");
+  } catch (error) {
+    alert(error?.message || "Could not load meals from storage right now.");
   } finally {
     state.loading = false;
   }
@@ -319,4 +322,12 @@ function formatMonthDay(date) {
     month: "short",
     day: "numeric",
   }).format(date);
+}
+
+async function safeJson(response) {
+  try {
+    return await response.json();
+  } catch {
+    return null;
+  }
 }
