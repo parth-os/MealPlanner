@@ -39,21 +39,32 @@
         <div id="calendarGrid" class="calendar-grid"></div>
       </section>
 
-      <section class="editor-shell" aria-live="polite">
-        <h3 id="editorDate">Select a day</h3>
-        <form id="mealForm">
-          <label>
-            Breakfast
-            <input id="breakfastInput" type="text" placeholder="e.g., Oatmeal and fruit" />
-          </label>
-          <label>
-            Lunch
-            <input id="lunchInput" type="text" placeholder="e.g., Chickpea salad" />
-          </label>
-          <label>
-            Dinner
-            <input id="dinnerInput" type="text" placeholder="e.g., Stir fry" />
-          </label>
+      <aside class="right-panel">
+        <section class="editor-shell panel-card" aria-live="polite">
+          <h3 id="editorDate">Select a day</h3>
+          <form id="mealForm">
+            <label>
+              Breakfast
+              <input id="breakfastInput" type="text" placeholder="e.g., Oatmeal and fruit" />
+            </label>
+            <label>
+              Lunch
+              <input id="lunchInput" type="text" placeholder="e.g., Chickpea salad" />
+            </label>
+            <label>
+              Dinner
+              <input id="dinnerInput" type="text" placeholder="e.g., Stir fry" />
+            </label>
+            <div class="editor-actions">
+              <button type="submit" class="save-btn">Save Meals</button>
+              <button type="button" id="clearBtn" class="clear-btn">Clear Day</button>
+            </div>
+          </form>
+          <p class="helper">Tip: Click any date (including past dates) to add or update meals.</p>
+        </section>
+
+        <section class="recommend-shell panel-card">
+          <h3>Meal Recommendations</h3>
           <div class="chip-field">
             <label for="pantryInput">Pantry staples</label>
             <input
@@ -74,15 +85,10 @@
             <div id="vegetablesSelected" class="selected-chips"></div>
             <div id="vegetablesSuggestions" class="suggestion-chips"></div>
           </div>
-          <div class="editor-actions">
-            <button type="submit" class="save-btn">Save Meals</button>
-            <button type="button" id="clearBtn" class="clear-btn">Clear Day</button>
-          </div>
           <button type="button" id="recommendBtn" class="recommend-btn">Recommend meals</button>
-        </form>
-        <section id="recommendResults" class="recommend-results"></section>
-        <p class="helper">Tip: Click any date (including past dates) to add or update meals.</p>
-      </section>
+          <section id="recommendResults" class="recommend-results"></section>
+        </section>
+      </aside>
     </main>
 
     <script src="app.js"></script>

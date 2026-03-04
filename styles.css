@@ -58,7 +58,8 @@ body {
 
 .topbar,
 .calendar-shell,
-.editor-shell {
+.editor-shell,
+.recommend-shell {
   background: var(--card);
   border: 1px solid var(--outline);
   border-radius: 22px;
@@ -125,6 +126,12 @@ h1 {
 
 .calendar-shell {
   padding: 1rem;
+}
+
+.right-panel {
+  display: grid;
+  gap: 1rem;
+  align-self: start;
 }
 
 .calendar-toolbar {
@@ -223,7 +230,15 @@ h1 {
 
 .editor-shell {
   padding: 1rem;
-  align-self: start;
+}
+
+.recommend-shell {
+  padding: 1rem;
+}
+
+.recommend-shell h3 {
+  margin-bottom: 0.9rem;
+  font-family: "Fraunces", serif;
 }
 
 #editorDate {
@@ -370,6 +385,10 @@ button.chip {
 @media (max-width: 920px) {
   .app {
     grid-template-columns: 1fr;
+  }
+
+  .right-panel {
+    gap: 1.25rem;
   }
 
   .day-cell {
